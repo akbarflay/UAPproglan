@@ -32,7 +32,6 @@ public class ModernHealthAppSwing {
         cardPanel.add(createSpecialistDoctorPanel(), "SpecialistDoctor");
         cardPanel.add(createNutriCalculatePanel(), "NutriCalculate");
         cardPanel.add(createLiveChatPanel(), "LiveChat");
-        cardPanel.add(createLabResultsPanel(), "LabResults");
 
         frame.getContentPane().add(cardPanel);
         frame.setVisible(true);
@@ -60,7 +59,7 @@ public class ModernHealthAppSwing {
         loginButton.setFont(new Font("Arial", Font.BOLD, 14));
         loginButton.addActionListener(e -> switchToScreen("Home"));
 
-        // Add components to layout
+        // Add components to layout with proper spacing
         gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
         loginPanel.add(header, gbc);
 
@@ -76,37 +75,39 @@ public class ModernHealthAppSwing {
         return loginPanel;
     }
 
+
     private JPanel createHomePanel() {
         JPanel homePanel = new JPanel();
         homePanel.setBackground(Color.decode("#F7F7F7"));
         homePanel.setLayout(new BoxLayout(homePanel, BoxLayout.Y_AXIS));
-
         homePanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
+        // Create menu buttons with consistent size and padding
         JButton specialistDoctorButton = createMenuButton("💼 Specialist Doctor", "#39A2DB");
         specialistDoctorButton.addActionListener(e -> switchToScreen("SpecialistDoctor"));
 
         JButton nutriCalculateButton = createMenuButton("🥗 Nutri Calculate", "#A29BFE");
         nutriCalculateButton.addActionListener(e -> switchToScreen("NutriCalculate"));
 
-        JButton labResultsButton = createMenuButton("📋 Lab Results", "#FDCB6E");
-        labResultsButton.addActionListener(e -> switchToScreen("LabResults"));
+//        JButton labResultsButton = createMenuButton("📋 Lab Results", "#FDCB6E");
+//        labResultsButton.addActionListener(e -> switchToScreen("LabResults"));
 
         JButton liveChatButton = createMenuButton("💬 Live Chat", "#74B9FF");
         liveChatButton.addActionListener(e -> switchToScreen("LiveChat"));
 
-        // Add buttons to panel
+        // Add buttons with vertical spacing
         homePanel.add(Box.createVerticalStrut(20));
         homePanel.add(specialistDoctorButton);
         homePanel.add(Box.createVerticalStrut(10));
         homePanel.add(nutriCalculateButton);
-        homePanel.add(Box.createVerticalStrut(10));
-        homePanel.add(labResultsButton);
+//        homePanel.add(Box.createVerticalStrut(10));
+//        homePanel.add(labResultsButton);
         homePanel.add(Box.createVerticalStrut(10));
         homePanel.add(liveChatButton);
 
         return homePanel;
     }
+
 
     private JPanel createSpecialistDoctorPanel() {
         JPanel panel = new JPanel();
@@ -115,21 +116,114 @@ public class ModernHealthAppSwing {
 
         JLabel header = new JLabel("Specialist Doctor", SwingConstants.CENTER);
         header.setFont(new Font("Arial", Font.BOLD, 22));
-
         panel.add(header);
         panel.add(Box.createVerticalStrut(10));
 
-        panel.add(createDoctorCard("Dr. Rishi", "Cardiologist", "4.7"));
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(createDoctorCard("Dr. Vaamana", "Dentist", "4.5"));
-        panel.add(Box.createVerticalStrut(10));
+        // List of doctors
+        DefaultListModel<String> doctorListModel = new DefaultListModel<>();
+        JList<String> doctorList = new JList<>(doctorListModel);
+        doctorList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        JScrollPane doctorScrollPane = new JScrollPane(doctorList);
+        panel.add(doctorScrollPane);
 
+        // Buttons for CRUD operations
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new FlowLayout());
+
+        JButton addButton = new JButton("Add Doctor");
+        addButton.addActionListener(e -> showAddDoctorDialog(doctorListModel));
+
+        JButton editButton = new JButton("Edit Doctor");
+        editButton.addActionListener(e -> {
+            int selectedIndex = doctorList.getSelectedIndex();
+            if (selectedIndex != -1) {
+                showEditDoctorDialog(doctorListModel, selectedIndex, doctorList);
+            }
+        });
+
+        JButton deleteButton = new JButton("Delete Doctor");
+        deleteButton.addActionListener(e -> {
+            int selectedIndex = doctorList.getSelectedIndex();
+            if (selectedIndex != -1) {
+                doctorListModel.remove(selectedIndex);
+            }
+        });
+
+        buttonPanel.add(addButton);
+        buttonPanel.add(editButton);
+        buttonPanel.add(deleteButton);
+        panel.add(buttonPanel);
+
+        // Back button
         JButton backButton = createBackButton();
         backButton.addActionListener(e -> switchToScreen("Home"));
         panel.add(backButton);
 
         return panel;
     }
+
+    // Dialog to add a new doctor
+    private void showAddDoctorDialog(DefaultListModel<String> doctorListModel) {
+        JTextField nameField = new JTextField(15);
+        JTextField specialtyField = new JTextField(15);
+        JTextField ratingField = new JTextField(5);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.add(new JLabel("Doctor Name"));
+        panel.add(nameField);
+        panel.add(new JLabel("Specialty"));
+        panel.add(specialtyField);
+        panel.add(new JLabel("Rating"));
+        panel.add(ratingField);
+
+        int option = JOptionPane.showConfirmDialog(null, panel, "Add New Doctor", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (option == JOptionPane.OK_OPTION) {
+            String name = nameField.getText();
+            String specialty = specialtyField.getText();
+            String rating = ratingField.getText();
+            if (!name.isEmpty() && !specialty.isEmpty() && !rating.isEmpty()) {
+                doctorListModel.addElement(name + " - " + specialty + " - Rating: " + rating);
+            } else {
+                JOptionPane.showMessageDialog(null, "All fields must be filled out", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    // Dialog to edit an existing doctor
+    private void showEditDoctorDialog(DefaultListModel<String> doctorListModel, int selectedIndex, JList<String> doctorList) {
+        String doctorDetails = doctorListModel.get(selectedIndex);
+        String[] parts = doctorDetails.split(" - ");
+        String currentName = parts[0];
+        String currentSpecialty = parts[1];
+        String currentRating = parts[2].replace("Rating: ", "");
+
+        JTextField nameField = new JTextField(currentName, 15);
+        JTextField specialtyField = new JTextField(currentSpecialty, 15);
+        JTextField ratingField = new JTextField(currentRating, 5);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.add(new JLabel("Doctor Name"));
+        panel.add(nameField);
+        panel.add(new JLabel("Specialty"));
+        panel.add(specialtyField);
+        panel.add(new JLabel("Rating"));
+        panel.add(ratingField);
+
+        int option = JOptionPane.showConfirmDialog(null, panel, "Edit Doctor", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (option == JOptionPane.OK_OPTION) {
+            String name = nameField.getText();
+            String specialty = specialtyField.getText();
+            String rating = ratingField.getText();
+            if (!name.isEmpty() && !specialty.isEmpty() && !rating.isEmpty()) {
+                doctorListModel.set(selectedIndex, name + " - " + specialty + " - Rating: " + rating);
+            } else {
+                JOptionPane.showMessageDialog(null, "All fields must be filled out", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
 
     private JPanel createNutriCalculatePanel() {
         JPanel panel = new JPanel();
@@ -159,6 +253,7 @@ public class ModernHealthAppSwing {
 
         panel.add(new JLabel("Pilih Makanan"));
         panel.add(foodSelector);
+        panel.add(new JLabel("Berat (gram)"));
         panel.add(weightField);
         panel.add(calculateButton);
         panel.add(resultLabel);
@@ -170,14 +265,73 @@ public class ModernHealthAppSwing {
         return panel;
     }
 
+
     private JPanel createLiveChatPanel() {
-        // Placeholder implementation
-        return new JPanel();
+        JPanel liveChatPanel = new JPanel();
+        liveChatPanel.setBackground(Color.WHITE);
+        liveChatPanel.setLayout(new BoxLayout(liveChatPanel, BoxLayout.Y_AXIS));
+
+        JLabel header = new JLabel("Live Chat", SwingConstants.CENTER);
+        header.setFont(new Font("Arial", Font.BOLD, 22));
+        liveChatPanel.add(header);
+
+        // Create the chat area to display messages
+        JTextArea chatArea = new JTextArea(10, 30);
+        chatArea.setEditable(false);  // Make the chat area non-editable
+        chatArea.setLineWrap(true);  // Allow line wrapping
+        JScrollPane scrollPane = new JScrollPane(chatArea);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        liveChatPanel.add(scrollPane);
+
+        // Create a message input field
+        JTextField messageField = new JTextField(30);
+
+        // Create the send button
+        JButton sendButton = new JButton("Send");
+        sendButton.addActionListener(e -> {
+            String message = messageField.getText().trim();
+            if (!message.isEmpty()) {
+                // Append the message to the chat area
+                chatArea.append("You: " + message + "\n");
+                messageField.setText("");  // Clear the message input field after sending
+                // Optionally, simulate a reply after a delay
+                simulateBotReply(chatArea);
+            }
+        });
+
+        // Add components for user input and send button
+        JPanel inputPanel = new JPanel();
+        inputPanel.setLayout(new BoxLayout(inputPanel, BoxLayout.X_AXIS));
+        inputPanel.add(messageField);
+        inputPanel.add(sendButton);
+        liveChatPanel.add(inputPanel);
+
+        return liveChatPanel;
     }
 
+    private void simulateBotReply(JTextArea chatArea) {
+        // Simulate a bot response with a slight delay
+        Timer timer = new Timer(1000, e -> chatArea.append("Bot: I'm here to help!\n"));
+        timer.setRepeats(false);
+        timer.start();
+    }
+
+
     private JPanel createLabResultsPanel() {
-        // Placeholder implementation
-        return new JPanel();
+        JPanel labResultsPanel = new JPanel();
+        labResultsPanel.setBackground(Color.WHITE);
+        labResultsPanel.setLayout(new BoxLayout(labResultsPanel, BoxLayout.Y_AXIS));
+
+        JLabel header = new JLabel("Lab Results", SwingConstants.CENTER);
+        header.setFont(new Font("Arial", Font.BOLD, 22));
+        labResultsPanel.add(header);
+
+        JTextArea resultsArea = new JTextArea(10, 30);
+        resultsArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(resultsArea);
+        labResultsPanel.add(scrollPane);
+
+        return labResultsPanel;
     }
 
     private JButton createMenuButton(String text, String color) {
